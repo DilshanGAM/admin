@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import {
 	Table,
 	TableBody,
@@ -21,12 +21,62 @@ import {
 	SelectContent,
 	SelectItem,
 } from "@/components/ui/select";
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+export const badges = [
+	{
+		key: "new",
+		label: "new",
+		color: "#007bff", // Blue
+	},
+	{
+		key: "called",
+		label: "called",
+		color: "#28a745", // Green
+	},
+	{
+		key: "rejected",
+		label: "rejected",
+		color: "#dc3545", // Red
+	},
+	{
+		key: "texted",
+		label: "texted",
+		color: "#ffc107", // Yellow
+	},
+	{
+		key: "follow up",
+		label: "follow up",
+		color: "#17a2b8", // Cyan
+	},
+	{
+		key: "spam",
+		label: "spam",
+		color: "#6c757d", // Gray
+	},
+];
 
 export default function LeedsPage() {
 	const [leedsList, setLeedsList] = useState([]);
 	const [leedsListLoading, setLeedsListLoading] = useState(false);
 	const [pageCount, setPageCount] = useState(1);
 	const [leedsCount, setLeedsCount] = useState(0);
+	const [query, setQuery] = useState("");
 	const [page, setPage] = useState(1);
 	const [startDate, setStartDate] = useState("2023-01-01");
 	//get today's date as end date
@@ -47,6 +97,7 @@ export default function LeedsPage() {
 					sortBy,
 					sortOrder,
 					page,
+					query,
 				},
 				headers: {
 					Authorization: `Bearer ${token}`,
@@ -64,7 +115,7 @@ export default function LeedsPage() {
 
 	useEffect(() => {
 		fetchLeeds();
-	}, [page, startDate, endDate, sortBy, sortOrder]);
+	}, [page, startDate, endDate, sortBy, sortOrder, query]);
 
 	return (
 		<div className="w-full p-6">
@@ -113,6 +164,14 @@ export default function LeedsPage() {
 						</SelectContent>
 					</Select>
 				</div>
+				<div>
+					<Label>Search</Label>
+					<Input
+						type="text"
+						value={query}
+						onChange={(e) => setQuery(e.target.value)}
+					/>
+				</div>
 				<div className="flex items-end">
 					<Button onClick={() => fetchLeeds()}>Apply Filters</Button>
 				</div>
@@ -128,6 +187,7 @@ export default function LeedsPage() {
 						<TableHead>Phone</TableHead>
 						<TableHead>Previous Site</TableHead>
 						<TableHead>Time</TableHead>
+						<TableHead>Badges</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -147,6 +207,9 @@ export default function LeedsPage() {
 								<TableCell>{item.phoneNumber}</TableCell>
 								<TableCell>{item.previousSite}</TableCell>
 								<TableCell>{new Date(item.time).toLocaleString()}</TableCell>
+								<TableCell>
+									<BadgeContent badgeList={item.badges} />
+								</TableCell>
 							</TableRow>
 						))
 					)}
@@ -176,5 +239,53 @@ export default function LeedsPage() {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+export function BadgeContent({ badgeList }: { badgeList: string[] }) {
+	const [fullDetailedBadgeList, setFullDetailedBadgeList] = useState<any[]>([]);
+	const [loading, setLoading] = useState(true);
+	useEffect(() => {
+		const detailedBadges = badgeList.map((badge) => {
+			const badgeData = badges.find((b) => b.key === badge);
+			return badgeData ? { ...badgeData, key: badge } : null;
+		});
+		setFullDetailedBadgeList(detailedBadges.filter((b) => b !== null));
+		setLoading(false);
+	}, [badgeList]);
+	return (
+		<Tooltip>
+			<TooltipTrigger className="cursor-pointer">
+				<TooltipContent>
+					<div className="flex flex-col gap-1">
+						{fullDetailedBadgeList.map((badge: any, index: number) => (
+							<div
+								key={index}
+								className="flex items-center gap-2 text-center px-2 py-1 rounded-full cursor-pointer"
+								style={{ backgroundColor: badge.color }}
+							>
+								<span className="text-xs text-white">{badge.label}</span>
+							</div>
+						))}
+					</div>
+				</TooltipContent>
+				<div className="w-[100px] flex items-center relative h-10 ">
+					{fullDetailedBadgeList.map((badge: any, index: number) => {			
+						return (
+							<div
+								key={index}
+								className={`absolute   text-white cursor-pointer px-[8px] flex items-center py-[2px] rounded-full`}
+								style={{
+									backgroundColor: badge.color,
+									left: `${index * 8}px`,
+								}}
+							>
+								<span className="text-xs">{badge.label}</span>
+							</div>
+						);
+					})}
+				</div>
+			</TooltipTrigger>
+		</Tooltip>
 	);
 }

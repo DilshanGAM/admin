@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     privileges?: [string];
     isBlocked?: boolean;
     */
-   const {firstName, lastName, email, password, phoneNumber, privileges, isBlocked} = await req.json();
+   const {firstName, lastName, email, password, phoneNumber} = await req.json();
     await connectMongo();
     try {
         const existingUser = await User.findOne({ email });
@@ -31,9 +31,7 @@ export async function POST(req: NextRequest) {
             lastName,
             email,
             password: hashedPassword,
-            phoneNumber,
-            privileges,
-            isBlocked
+            phoneNumber
         });
 
         return NextResponse.json(newUser, { status: 201 });

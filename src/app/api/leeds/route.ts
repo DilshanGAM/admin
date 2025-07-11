@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
 		const endDateRaw =
 			req.nextUrl.searchParams.get("endDate") ||
 			new Date().toISOString().split("T")[0];
+		const query = req.nextUrl.searchParams.get("query") || "";
 
 		const endDate = new Date(new Date(endDateRaw).setHours(23, 59, 59, 999));
 		const countInString = req.nextUrl.searchParams.get("count") || "20";
@@ -63,6 +64,11 @@ export async function GET(req: NextRequest) {
 				$gte: startDate,
 				$lte: endDate,
 			},
+			$or: [
+				{ firstName: { $regex: query, $options: "i" } },
+				{ lastName: { $regex: query, $options: "i" } },
+				{ phoneNumber: { $regex: query, $options: "i" } },
+			],
 		})
 			.sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
 			.limit(count)

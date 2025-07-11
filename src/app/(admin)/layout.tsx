@@ -30,7 +30,7 @@ export default function RootLayout({
       >
         <div className="w-full h-screen flex">
           <NavigationBar />
-          <div className={`sidebar-scroll w-full  h-screen overflow-y-scroll `}>
+          <div className={`static-scroll w-full  h-screen overflow-y-scroll `}>
             <Toaster position="top-right" />
             {children}
           </div>
