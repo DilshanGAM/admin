@@ -242,7 +242,7 @@ export default function LeedsPage() {
 	);
 }
 
-export function BadgeContent({ badgeList }: { badgeList: string[] }) {
+function BadgeContent({ badgeList }: { badgeList: string[] }) {
 	const [fullDetailedBadgeList, setFullDetailedBadgeList] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
 	useEffect(() => {
