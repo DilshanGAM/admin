@@ -38,7 +38,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-export const badges = [
+const badges = [
 	{
 		key: "new",
 		label: "new",
