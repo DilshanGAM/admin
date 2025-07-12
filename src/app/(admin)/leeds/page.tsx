@@ -37,6 +37,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DownloadIcon } from "lucide-react";
 
 const badgeOptions  = [
 	{
@@ -121,7 +122,36 @@ export default function LeedsPage() {
 	}, [page, startDate, endDate, sortBy, sortOrder, query]);
 
 	return (
-		<div className="w-full p-6">
+		<div className="w-full p-6 relative">
+			<DownloadIcon className="absolute top-4 right-4" 
+			onClick={
+				()=>{
+					const token = localStorage.getItem("token");
+					axios.get(`/api/leeds/getCSV`, {
+						params: {
+							startDate,
+							endDate,
+							query,
+							sortBy,
+							sortOrder,
+						},
+						headers: {
+							Authorization: `Bearer ${token}`,
+						},
+					}).then((response) => {
+						const csvData = response.data;
+						const blob = new Blob([csvData], { type: "text/csv" });
+						const url = URL.createObjectURL(blob);
+						const a = document.createElement("a");
+						a.href = url;
+						a.download = "leeds.csv";
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+					});
+				}
+			} />
+
 			{selectedLeed && (
 				<PopUPModal
 					leed={selectedLeed}
