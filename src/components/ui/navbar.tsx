@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import {
 	MenuIcon,
 	LayoutDashboard,
@@ -9,7 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function isCorrectPath(path: String, href: string): boolean {
 	return path === href;
@@ -21,6 +22,11 @@ export default function NavigationBar() {
 	);
 	const path = usePathname();
 	console.log("Current path:", path);
+	useEffect(
+		()=>{
+	
+		},[]
+	)
 
 	// Determine the current width class
 	const widthClass =

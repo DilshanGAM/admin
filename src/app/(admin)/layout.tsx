@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import NavigationBar from "@/components/ui/navbar";
 import { Toaster } from "react-hot-toast";
+import AuthValidator from "@/components/ui/authValidator";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +33,9 @@ export default function RootLayout({
           <NavigationBar />
           <div className={`static-scroll w-full  h-screen overflow-y-scroll `}>
             <Toaster position="top-right" />
-            {children}
+            <AuthValidator>
+              {children}
+            </AuthValidator>
           </div>
 
           

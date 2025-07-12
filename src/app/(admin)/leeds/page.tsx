@@ -38,7 +38,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const badges = [
+const badgeOptions  = [
 	{
 		key: "new",
 		label: "new",
@@ -85,6 +85,8 @@ export default function LeedsPage() {
 	const [endDate, setEndDate] = useState(formattedToday);
 	const [sortBy, setSortBy] = useState("createdAt");
 	const [sortOrder, setSortOrder] = useState("desc");
+	const [isOpen, setIsOpen] = useState(false);
+	const [selectedLeed, setSelectedLeed] = useState(null);
 
 	const fetchLeeds = async () => {
 		try {
@@ -106,6 +108,7 @@ export default function LeedsPage() {
 			setLeedsList(res.data.leeds);
 			setPageCount(res.data.pageCount);
 			setLeedsCount(res.data.leedsCount);
+			setSelectedLeed(res.data.leeds[0] || null);
 		} catch (err) {
 			console.error("Error fetching leeds:", err);
 		} finally {
@@ -119,6 +122,15 @@ export default function LeedsPage() {
 
 	return (
 		<div className="w-full p-6">
+			{selectedLeed && (
+				<PopUPModal
+					leed={selectedLeed}
+					reload={fetchLeeds}
+					isOpen={isOpen}
+					setIsOpen={setIsOpen}
+					setSelectedLeed={setSelectedLeed}
+				/>
+			)}
 			<h1 className="text-2xl font-bold mb-4">Leeds Data</h1>
 
 			{/* Filters */}
@@ -201,7 +213,13 @@ export default function LeedsPage() {
 						</TableRow>
 					) : (
 						leedsList.map((item: any) => (
-							<TableRow key={item._id}>
+							<TableRow
+								key={item._id}
+								onClick={() => {
+									setSelectedLeed(item);
+									setIsOpen(true);
+								}}
+							>
 								<TableCell>{item.firstName}</TableCell>
 								<TableCell>{item.lastName}</TableCell>
 								<TableCell>{item.phoneNumber}</TableCell>
@@ -247,13 +265,19 @@ function BadgeContent({ badgeList }: { badgeList: string[] }) {
 	const [loading, setLoading] = useState(true);
 	useEffect(() => {
 		const detailedBadges = badgeList.map((badge) => {
-			const badgeData = badges.find((b) => b.key === badge);
+			const badgeData = badgeOptions .find((b) => b.key === badge);
 			return badgeData ? { ...badgeData, key: badge } : null;
 		});
 		setFullDetailedBadgeList(detailedBadges.filter((b) => b !== null));
 		setLoading(false);
 	}, [badgeList]);
-	return (
+	return loading ? (
+		<div className="flex items-center justify-center h-10">
+			<div className="border-t-transparent border-solid border-4 border-blue-500 rounded-full animate-spin w-6 h-6"></div>
+		</div>
+	) : fullDetailedBadgeList.length === 0 ? (
+		<span className="text-gray-500">No badges</span>
+	) : (
 		<Tooltip>
 			<TooltipTrigger className="cursor-pointer">
 				<TooltipContent>
@@ -270,7 +294,7 @@ function BadgeContent({ badgeList }: { badgeList: string[] }) {
 					</div>
 				</TooltipContent>
 				<div className="w-[100px] flex items-center relative h-10 ">
-					{fullDetailedBadgeList.map((badge: any, index: number) => {			
+					{fullDetailedBadgeList.map((badge: any, index: number) => {
 						return (
 							<div
 								key={index}
@@ -287,5 +311,103 @@ function BadgeContent({ badgeList }: { badgeList: string[] }) {
 				</div>
 			</TooltipTrigger>
 		</Tooltip>
+	);
+}
+
+export function PopUPModal({
+	leed,
+	reload,
+	isOpen,
+	setIsOpen,
+	setSelectedLeed,
+}: {
+	leed: any;
+	reload: () => void;
+	isOpen: boolean;
+	setIsOpen: (open: boolean) => void;
+	setSelectedLeed: (leed: any) => void;
+}) {
+	const [selectedBadges, setSelectedBadges] = useState<string[]>(
+		leed.badges || []
+	);
+	const [loading, setLoading] = useState(false);
+	
+
+	const handleBadgeChange = (badge: string) => {
+		setSelectedBadges((prev) =>
+			prev.includes(badge) ? prev.filter((b) => b !== badge) : [...prev, badge]
+		);
+	};
+	function closeModal() {
+		setIsOpen(false);
+		setSelectedLeed(null);
+	}
+	const handleSubmit = async () => {
+		setLoading(true);
+		try {
+			const token = localStorage.getItem("token");
+			await axios.put(
+				`/api/leeds?id=${leed._id}`,
+				{ badges: selectedBadges },
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				}
+			);
+			reload();
+			closeModal();
+		} catch (error) {
+			console.error("Error updating badges:", error);
+		} finally {
+			setLoading(false);
+		}
+	};
+	
+	return (
+		<Dialog open={isOpen} onOpenChange={(open) => {
+			if (!open) {
+				closeModal();
+			}else {
+				setIsOpen(true);
+			}
+		}
+		}>
+			<DialogContent className="max-w-md">
+				<DialogHeader>
+					<DialogTitle>Update Badges for {leed.firstName}</DialogTitle>
+					<DialogDescription>
+						Select or deselect badges for this user.
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="flex flex-wrap gap-2 mt-4">
+					{badgeOptions.map((badge) => {
+						const isActive = selectedBadges.includes(badge.key);
+						return (
+							<Button
+								key={badge.key}
+								variant={isActive ? "default" : "outline"}
+								style={{
+									backgroundColor: isActive ? badge.color : undefined,
+									color: isActive ? "#fff" : undefined,
+									borderColor: badge.color,
+								}}
+								onClick={() => handleBadgeChange(badge.key)}
+							>
+								{badge.label}
+							</Button>
+						);
+					})}
+				</div>
+
+				<DialogFooter className="mt-6">
+					<Button onClick={handleSubmit} disabled={loading}>
+						{loading ? "Updating..." : "Update Badges"}
+					</Button>
+					<Button variant="outline" onClick={closeModal}>Close</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

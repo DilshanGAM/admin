@@ -1,7 +1,7 @@
 import connectMongo from "@/lib/connectDB";
 import Leed from "@/models/leedsModal";
 import { NextRequest, NextResponse } from "next/server";
-connectMongo();
+
 
 export async function POST(request: NextRequest) {
 	//create leed
@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
 	}
 }
 export async function GET(req: NextRequest) {
+	await connectMongo();
 	const user = req.headers.get("user");
 	if (!user) {
 		return NextResponse.json(
@@ -87,6 +88,45 @@ export async function GET(req: NextRequest) {
 	} catch (error: any) {
 		return NextResponse.json(
 			{ message: "Failed to fetch leeds", error: error.message },
+			{ status: 500 }
+		);
+	}
+}
+
+//update leed badges
+export async function PUT(request: NextRequest) {
+	await connectMongo();
+	const user = request.headers.get("user");
+	if (!user) {
+		return NextResponse.json(
+			{ message: "You need to login as an admin to update leeds." },
+			{ status: 401 }
+		);
+	}
+	const leedsObjectId = request.nextUrl.searchParams.get("id");
+	if (!leedsObjectId) {
+		return NextResponse.json(
+			{ message: "Leed ID is required" },
+			{ status: 400 }
+		);
+	}
+	const body = await request.json();
+	try {
+		const updatedLeed = await Leed.findByIdAndUpdate(
+			leedsObjectId,
+			{ badges: body.badges },
+			{ new: true }
+		);
+		if (!updatedLeed) {
+			return NextResponse.json(
+				{ message: "Leed not found" },
+				{ status: 404 }
+			);
+		}
+		return NextResponse.json(updatedLeed);
+	} catch (error: any) {
+		return NextResponse.json(
+			{ message: "Failed to update leed", error: error.message },
 			{ status: 500 }
 		);
 	}

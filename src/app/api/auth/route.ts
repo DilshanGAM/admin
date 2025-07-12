@@ -50,3 +50,11 @@ export async function POST(request: NextRequest) {
 		},
 	});
 }
+
+export async function GET(request: NextRequest) {
+	const user = request.headers.get("user");
+	if (!user) {
+		return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+	}
+	return NextResponse.json({ user: JSON.parse(user) });
+}
