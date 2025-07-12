@@ -314,7 +314,7 @@ function BadgeContent({ badgeList }: { badgeList: string[] }) {
 	);
 }
 
-export function PopUPModal({
+function PopUPModal({
 	leed,
 	reload,
 	isOpen,
