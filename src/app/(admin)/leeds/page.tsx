@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { use, useEffect, useState } from "react";
+import { FaPhoneSquareAlt, FaWhatsappSquare } from "react-icons/fa";
 import {
 	Table,
 	TableBody,
@@ -39,7 +40,7 @@ import {
 } from "@/components/ui/tooltip";
 import { DownloadIcon } from "lucide-react";
 
-const badgeOptions  = [
+const badgeOptions = [
 	{
 		key: "new",
 		label: "new",
@@ -88,6 +89,7 @@ export default function LeedsPage() {
 	const [sortOrder, setSortOrder] = useState("desc");
 	const [isOpen, setIsOpen] = useState(false);
 	const [selectedLeed, setSelectedLeed] = useState(null);
+	const [badgeList, setBadgeList] = useState<string[]>([]);
 
 	const fetchLeeds = async () => {
 		try {
@@ -123,34 +125,36 @@ export default function LeedsPage() {
 
 	return (
 		<div className="w-full p-6 relative">
-			<DownloadIcon className="absolute top-4 right-4" 
-			onClick={
-				()=>{
+			<DownloadIcon
+				className="absolute top-4 right-4"
+				onClick={() => {
 					const token = localStorage.getItem("token");
-					axios.get(`/api/leeds/getCSV`, {
-						params: {
-							startDate,
-							endDate,
-							query,
-							sortBy,
-							sortOrder,
-						},
-						headers: {
-							Authorization: `Bearer ${token}`,
-						},
-					}).then((response) => {
-						const csvData = response.data;
-						const blob = new Blob([csvData], { type: "text/csv" });
-						const url = URL.createObjectURL(blob);
-						const a = document.createElement("a");
-						a.href = url;
-						a.download = "leeds.csv";
-						document.body.appendChild(a);
-						a.click();
-						document.body.removeChild(a);
-					});
-				}
-			} />
+					axios
+						.get(`/api/leeds/getCSV`, {
+							params: {
+								startDate,
+								endDate,
+								query,
+								sortBy,
+								sortOrder,
+							},
+							headers: {
+								Authorization: `Bearer ${token}`,
+							},
+						})
+						.then((response) => {
+							const csvData = response.data;
+							const blob = new Blob([csvData], { type: "text/csv" });
+							const url = URL.createObjectURL(blob);
+							const a = document.createElement("a");
+							a.href = url;
+							a.download = "leeds.csv";
+							document.body.appendChild(a);
+							a.click();
+							document.body.removeChild(a);
+						});
+				}}
+			/>
 
 			{selectedLeed && (
 				<PopUPModal
@@ -164,7 +168,7 @@ export default function LeedsPage() {
 			<h1 className="text-2xl font-bold mb-4">Leeds Data</h1>
 
 			{/* Filters */}
-			<div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+			<div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6 ">
 				<div>
 					<Label>Start Date</Label>
 					<Input
@@ -182,15 +186,36 @@ export default function LeedsPage() {
 					/>
 				</div>
 				<div>
-					<Label>Sort By</Label>
-					<Select value={sortBy} onValueChange={setSortBy}>
+					<Label>Date range</Label>
+					<Select 
+						defaultValue="500"
+						// onValueChange={setSortBy}
+						onValueChange={(value) => {
+							const days = parseInt(value, 10);
+							const today = new Date();
+							const start = new Date(today);
+							start.setDate(today.getDate() - days);
+							setStartDate(start.toISOString().split("T")[0]);
+							setEndDate(today.toISOString().split("T")[0]);
+						}}
+						>
 						<SelectTrigger>
-							<SelectValue placeholder="Sort By" />
+							<SelectValue placeholder="Date range" />
 						</SelectTrigger>
-						<SelectContent>
+						{/* <SelectContent>
 							<SelectItem value="createdAt">Created At</SelectItem>
 							<SelectItem value="firstName">First Name</SelectItem>
 							<SelectItem value="phoneNumber">Phone Number</SelectItem>
+						</SelectContent> */}
+						{/* Last 30 days, Last 7 days, Today, Yesterday and Today, Last 100 days, Last 14 days (On click the date range should be changed) */}
+						<SelectContent >
+							<SelectItem value={"3000"}>All Time</SelectItem>
+							<SelectItem value={"30"}>Last 30 days</SelectItem>
+							<SelectItem value={"7"}>Last 7 days</SelectItem>
+							<SelectItem value={"0"}>Today</SelectItem>
+							<SelectItem value={"1"}>Yesterday and Today</SelectItem>
+							<SelectItem value={"100"}>Last 100 days</SelectItem>
+							<SelectItem value={"14"}>Last 14 days</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
@@ -205,6 +230,11 @@ export default function LeedsPage() {
 							<SelectItem value="desc">Descending</SelectItem>
 						</SelectContent>
 					</Select>
+					{/* <Label>Badges</Label>
+					<BadgeSelector
+						badgeList={badgeList}
+						setBadgeList={setBadgeList}
+					/> */}
 				</div>
 				<div>
 					<Label>Search</Label>
@@ -218,6 +248,10 @@ export default function LeedsPage() {
 					<Button onClick={() => fetchLeeds()}>Apply Filters</Button>
 				</div>
 			</div>
+			<BadgeSelector
+				badgeList={badgeList}
+				setBadgeList={setBadgeList}
+			/>
 
 			{/* Table */}
 			<Table>
@@ -227,7 +261,7 @@ export default function LeedsPage() {
 						<TableHead className="w-[150px]">First Name</TableHead>
 						<TableHead>Last Name</TableHead>
 						<TableHead>Phone</TableHead>
-						<TableHead>Previous Site</TableHead>
+						<TableHead>Connect</TableHead>
 						<TableHead>Time</TableHead>
 						<TableHead>Badges</TableHead>
 					</TableRow>
@@ -243,19 +277,34 @@ export default function LeedsPage() {
 						</TableRow>
 					) : (
 						leedsList.map((item: any) => (
-							<TableRow
-								key={item._id}
-								onClick={() => {
-									setSelectedLeed(item);
-									setIsOpen(true);
-								}}
-							>
+							<TableRow key={item._id}>
 								<TableCell>{item.firstName}</TableCell>
 								<TableCell>{item.lastName}</TableCell>
 								<TableCell>{item.phoneNumber}</TableCell>
-								<TableCell>{item.previousSite}</TableCell>
+								<TableCell className="flex items-center gap-2">
+									<FaWhatsappSquare
+										className="text-green-500 cursor-pointer text-3xl"
+										onClick={() => {
+											window.open(
+												`https://wa.me/${item.phoneNumber}`,
+												"_blank"
+											);
+										}}
+									/>
+									<FaPhoneSquareAlt
+										className="text-blue-500 cursor-pointer text-3xl"
+										onClick={() => {
+											window.open(`tel:${item.phoneNumber}`, "_self");
+										}}
+									/>
+								</TableCell>
 								<TableCell>{new Date(item.time).toLocaleString()}</TableCell>
-								<TableCell>
+								<TableCell
+									onClick={() => {
+										setSelectedLeed(item);
+										setIsOpen(true);
+									}}
+								>
 									<BadgeContent badgeList={item.badges} />
 								</TableCell>
 							</TableRow>
@@ -295,7 +344,7 @@ function BadgeContent({ badgeList }: { badgeList: string[] }) {
 	const [loading, setLoading] = useState(true);
 	useEffect(() => {
 		const detailedBadges = badgeList.map((badge) => {
-			const badgeData = badgeOptions .find((b) => b.key === badge);
+			const badgeData = badgeOptions.find((b) => b.key === badge);
 			return badgeData ? { ...badgeData, key: badge } : null;
 		});
 		setFullDetailedBadgeList(detailedBadges.filter((b) => b !== null));
@@ -361,7 +410,6 @@ function PopUPModal({
 		leed.badges || []
 	);
 	const [loading, setLoading] = useState(false);
-	
 
 	const handleBadgeChange = (badge: string) => {
 		setSelectedBadges((prev) =>
@@ -393,16 +441,18 @@ function PopUPModal({
 			setLoading(false);
 		}
 	};
-	
+
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => {
-			if (!open) {
-				closeModal();
-			}else {
-				setIsOpen(true);
-			}
-		}
-		}>
+		<Dialog
+			open={isOpen}
+			onOpenChange={(open) => {
+				if (!open) {
+					closeModal();
+				} else {
+					setIsOpen(true);
+				}
+			}}
+		>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
 					<DialogTitle>Update Badges for {leed.firstName}</DialogTitle>
@@ -435,9 +485,45 @@ function PopUPModal({
 					<Button onClick={handleSubmit} disabled={loading}>
 						{loading ? "Updating..." : "Update Badges"}
 					</Button>
-					<Button variant="outline" onClick={closeModal}>Close</Button>
+					<Button variant="outline" onClick={closeModal}>
+						Close
+					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+function BadgeSelector({
+	badgeList,
+	setBadgeList,
+}: {
+	badgeList: string[];
+	setBadgeList: (badges: string[]) => void;
+}) {
+	return (
+		<div className="flex flex-wrap gap-2">
+			{badgeOptions.map((badge) => (
+				<Button
+					key={badge.key}
+					variant={badgeList.includes(badge.key) ? "default" : "outline"}
+					style={{
+						backgroundColor: badgeList.includes(badge.key)
+							? badge.color
+							: undefined,
+						color: badgeList.includes(badge.key) ? "#fff" : undefined,
+						borderColor: badge.color,
+					}}
+					onClick={() => {
+						const newBadges = badgeList.includes(badge.key)
+							? badgeList.filter((b) => b !== badge.key)
+							: [...badgeList, badge.key];
+						setBadgeList(newBadges);
+					}}
+				>
+					{badge.label}
+				</Button>
+			))}
+		</div>
 	);
 }
