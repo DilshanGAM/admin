@@ -39,6 +39,8 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { DownloadIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import toast from "react-hot-toast";
 
 const badgeOptions = [
 	{
@@ -90,6 +92,7 @@ export default function LeedsPage() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [selectedLeed, setSelectedLeed] = useState(null);
 	const [badgeList, setBadgeList] = useState<string[]>([]);
+	const [leedsSelectionList, setLeedsSelectionList] = useState<boolean[]>([]);
 
 	const fetchLeeds = async () => {
 		try {
@@ -112,12 +115,48 @@ export default function LeedsPage() {
 			setPageCount(res.data.pageCount);
 			setLeedsCount(res.data.leedsCount);
 			setSelectedLeed(res.data.leeds[0] || null);
+			setLeedsSelectionList(new Array(res.data.leeds.length).fill(false));
 		} catch (err) {
 			console.error("Error fetching leeds:", err);
 		} finally {
 			setLeedsListLoading(false);
 		}
 	};
+
+	function downloadCsvOfSelectedLeeds() {
+		const selectedLeeds = leedsList.filter(
+			(_, index) => leedsSelectionList[index]
+		);
+		if (selectedLeeds.length === 0) {
+			alert("No leeds selected for download.");
+			return;
+		}
+		const csvHeader = [
+			"First Name",
+			"Last Name",
+			"Phone Number",
+			"Time",
+			"Previous Site",
+		];
+		const csvRows = selectedLeeds.map((l: any) => [
+			l.firstName,
+			l.lastName,
+			l.phoneNumber,
+			new Date(l.time).toISOString(),
+			l.previousSite,
+		]);
+		const csvString = [csvHeader, ...csvRows]
+			.map((row) => row.join(","))
+			.join("\n");
+		const blob = new Blob([csvString], { type: "text/csv" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = "leeds.csv";
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+	}
 
 	useEffect(() => {
 		fetchLeeds();
@@ -187,7 +226,7 @@ export default function LeedsPage() {
 				</div>
 				<div>
 					<Label>Date range</Label>
-					<Select 
+					<Select
 						defaultValue="500"
 						// onValueChange={setSortBy}
 						onValueChange={(value) => {
@@ -198,7 +237,7 @@ export default function LeedsPage() {
 							setStartDate(start.toISOString().split("T")[0]);
 							setEndDate(today.toISOString().split("T")[0]);
 						}}
-						>
+					>
 						<SelectTrigger>
 							<SelectValue placeholder="Date range" />
 						</SelectTrigger>
@@ -208,7 +247,7 @@ export default function LeedsPage() {
 							<SelectItem value="phoneNumber">Phone Number</SelectItem>
 						</SelectContent> */}
 						{/* Last 30 days, Last 7 days, Today, Yesterday and Today, Last 100 days, Last 14 days (On click the date range should be changed) */}
-						<SelectContent >
+						<SelectContent>
 							<SelectItem value={"3000"}>All Time</SelectItem>
 							<SelectItem value={"30"}>Last 30 days</SelectItem>
 							<SelectItem value={"7"}>Last 7 days</SelectItem>
@@ -248,16 +287,50 @@ export default function LeedsPage() {
 					<Button onClick={() => fetchLeeds()}>Apply Filters</Button>
 				</div>
 			</div>
-			<BadgeSelector
-				badgeList={badgeList}
-				setBadgeList={setBadgeList}
-			/>
+
+			<div className="flex justify-between items-center mb-4">
+				<BadgeSelector badgeList={badgeList} setBadgeList={setBadgeList} />
+				<div className="flex items-center gap-2">
+					<Button
+						variant="outline"
+						onClick={downloadCsvOfSelectedLeeds}
+						disabled={!leedsSelectionList.some((selected) => selected)}
+					>
+						Download Selected Leeds
+					</Button>
+					{/* copy phone selected phone numbers using , as a seperator */}
+					<Button
+						variant="outline"
+						onClick={() => {
+							const selectedNumbers = leedsList
+								.filter((_, index) => leedsSelectionList[index])
+								.map((item: any) => item.phoneNumber)
+								.join(",");
+							navigator.clipboard.writeText(selectedNumbers);
+							toast.success("Selected phone numbers copied to clipboard.");
+						}}
+						disabled={!leedsSelectionList.some((selected) => selected)}
+					>
+						Copy Selected Numbers
+					</Button>
+				</div>
+			</div>
 
 			{/* Table */}
 			<Table>
 				<TableCaption>List of collected leeds.</TableCaption>
 				<TableHeader>
 					<TableRow>
+						<TableHead className="w-[150px]">
+							<Switch
+								checked={leedsSelectionList.every((item) => item)}
+								onCheckedChange={(checked) => {
+									setLeedsSelectionList(
+										new Array(leedsList.length).fill(checked)
+									);
+								}}
+							/>
+						</TableHead>
 						<TableHead className="w-[150px]">First Name</TableHead>
 						<TableHead>Last Name</TableHead>
 						<TableHead>Phone</TableHead>
@@ -276,8 +349,18 @@ export default function LeedsPage() {
 							<TableCell colSpan={5}>No data found.</TableCell>
 						</TableRow>
 					) : (
-						leedsList.map((item: any) => (
+						leedsList.map((item: any, index: number) => (
 							<TableRow key={item._id}>
+								<TableCell>
+									<Switch
+										checked={leedsSelectionList[index]}
+										onCheckedChange={(checked) => {
+											const newSelection = [...leedsSelectionList];
+											newSelection[index] = checked;
+											setLeedsSelectionList(newSelection);
+										}}
+									/>
+								</TableCell>
 								<TableCell>{item.firstName}</TableCell>
 								<TableCell>{item.lastName}</TableCell>
 								<TableCell>{item.phoneNumber}</TableCell>
