@@ -41,6 +41,7 @@ import {
 import { DownloadIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import toast from "react-hot-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const badgeOptions = [
 	{
@@ -322,7 +323,15 @@ export default function LeedsPage() {
 				<TableHeader>
 					<TableRow>
 						<TableHead className="w-[150px]">
-							<Switch
+							{/* <Switch
+								checked={leedsSelectionList.every((item) => item)}
+								onCheckedChange={(checked) => {
+									setLeedsSelectionList(
+										new Array(leedsList.length).fill(checked)
+									);
+								}}
+							/> */}
+							<Checkbox
 								checked={leedsSelectionList.every((item) => item)}
 								onCheckedChange={(checked) => {
 									setLeedsSelectionList(
@@ -352,9 +361,17 @@ export default function LeedsPage() {
 						leedsList.map((item: any, index: number) => (
 							<TableRow key={item._id}>
 								<TableCell>
-									<Switch
+									{/* <Switch
 										checked={leedsSelectionList[index]}
 										onCheckedChange={(checked) => {
+											const newSelection = [...leedsSelectionList];
+											newSelection[index] = checked;
+											setLeedsSelectionList(newSelection);
+										}}
+									/> */}
+									<Checkbox
+										checked={leedsSelectionList[index]}
+										onCheckedChange={(checked : boolean) => {
 											const newSelection = [...leedsSelectionList];
 											newSelection[index] = checked;
 											setLeedsSelectionList(newSelection);
