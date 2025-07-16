@@ -107,6 +107,7 @@ export default function LeedsPage() {
 					sortOrder,
 					page,
 					query,
+					badgeList: badgeList.join(","),
 				},
 				headers: {
 					Authorization: `Bearer ${token}`,
@@ -160,8 +161,11 @@ export default function LeedsPage() {
 	}
 
 	useEffect(() => {
-		fetchLeeds();
-	}, [page, startDate, endDate, sortBy, sortOrder, query]);
+		if(leedsListLoading){
+			fetchLeeds();
+		}
+		
+	}, [page, startDate, endDate, sortBy, sortOrder, query , leedsListLoading]);
 
 	return (
 		<div className="w-full p-6 relative">
@@ -228,7 +232,7 @@ export default function LeedsPage() {
 				<div>
 					<Label>Date range</Label>
 					<Select
-						defaultValue="500"
+						defaultValue="3000"
 						// onValueChange={setSortBy}
 						onValueChange={(value) => {
 							const days = parseInt(value, 10);
@@ -290,7 +294,7 @@ export default function LeedsPage() {
 			</div>
 
 			<div className="flex justify-between items-center mb-4">
-				<BadgeSelector badgeList={badgeList} setBadgeList={setBadgeList} />
+				<BadgeSelector badgeList={badgeList} setBadgeList={setBadgeList} setLeedsListLoading={setLeedsListLoading} />
 				<div className="flex items-center gap-2">
 					<Button
 						variant="outline"
@@ -597,9 +601,12 @@ function PopUPModal({
 function BadgeSelector({
 	badgeList,
 	setBadgeList,
+	setLeedsListLoading
+	
 }: {
 	badgeList: string[];
 	setBadgeList: (badges: string[]) => void;
+	setLeedsListLoading?: (loading: boolean) => void;
 }) {
 	return (
 		<div className="flex flex-wrap gap-2">
@@ -619,6 +626,9 @@ function BadgeSelector({
 							? badgeList.filter((b) => b !== badge.key)
 							: [...badgeList, badge.key];
 						setBadgeList(newBadges);
+						if (setLeedsListLoading) {
+							setLeedsListLoading(true);
+						}
 					}}
 				>
 					{badge.label}

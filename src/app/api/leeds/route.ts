@@ -2,7 +2,6 @@ import connectMongo from "@/lib/connectDB";
 import Leed from "@/models/leedsModal";
 import { NextRequest, NextResponse } from "next/server";
 
-
 export async function POST(request: NextRequest) {
 	//create leed
 	await connectMongo();
@@ -52,12 +51,28 @@ export async function GET(req: NextRequest) {
 		const sortOrder = req.nextUrl.searchParams.get("sortOrder") || "desc";
 		const pageInString = req.nextUrl.searchParams.get("page") || "1";
 		const page = parseInt(pageInString, 10);
-        
+		let badgeList =
+			req.nextUrl.searchParams.get("badgeList")?.split(",") || [];
+		
+		if(badgeList[0] === "") {
+			badgeList = []
+		}
+		console.log("Badge List:", badgeList);
+		//check if badgeList is not present or empty
+
 		const leedsCount = await Leed.countDocuments({
 			createdAt: {
 				$gte: startDate,
 				$lte: endDate,
 			},
+			$or: [
+				{ firstName: { $regex: query, $options: "i" } },
+				{ lastName: { $regex: query, $options: "i" } },
+				{ phoneNumber: { $regex: query, $options: "i" } },
+			],
+			//find the leeds with the badges in the badgeList
+			badges: badgeList.length > 0 ? { $all: badgeList } : { $exists: true },			
+
 		});
 		const pageCount = Math.ceil(leedsCount / count);
 		const leeds = await Leed.find({
@@ -70,6 +85,8 @@ export async function GET(req: NextRequest) {
 				{ lastName: { $regex: query, $options: "i" } },
 				{ phoneNumber: { $regex: query, $options: "i" } },
 			],
+			//find the leeds with the badges in the badgeList if badgeList is not empty
+			badges : badgeList.length > 0 ? { $all: badgeList } : { $exists: true },
 		})
 			.sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
 			.limit(count)
@@ -118,10 +135,7 @@ export async function PUT(request: NextRequest) {
 			{ new: true }
 		);
 		if (!updatedLeed) {
-			return NextResponse.json(
-				{ message: "Leed not found" },
-				{ status: 404 }
-			);
+			return NextResponse.json({ message: "Leed not found" }, { status: 404 });
 		}
 		return NextResponse.json(updatedLeed);
 	} catch (error: any) {
