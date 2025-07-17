@@ -382,7 +382,7 @@ export default function LeedsPage() {
 						</TableRow>
 					) : (
 						leedsList.map((item: any, index: number) => (
-							<TableRow key={item._id}>
+							<TableRow key={item._id} className={leedsSelectionList[index] ? "bg-blue-100" : ""}>
 								<TableCell>
 									{/* <Switch
 										checked={leedsSelectionList[index]}
