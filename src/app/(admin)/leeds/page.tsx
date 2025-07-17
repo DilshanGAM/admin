@@ -99,7 +99,6 @@ export default function LeedsPage() {
 	const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
 	const fetchLeeds = async () => {
 		try {
-			
 			const token = localStorage.getItem("token");
 			const res = await axios.get(`/api/leeds`, {
 				params: {
@@ -163,11 +162,10 @@ export default function LeedsPage() {
 	}
 
 	useEffect(() => {
-		if(leedsListLoading){
+		if (leedsListLoading) {
 			fetchLeeds();
 		}
-		
-	}, [page, startDate, endDate, sortBy, sortOrder, query , leedsListLoading]);
+	}, [page, startDate, endDate, sortBy, sortOrder, query, leedsListLoading]);
 
 	return (
 		<div className="w-full p-6 relative">
@@ -228,7 +226,10 @@ export default function LeedsPage() {
 					<Input
 						type="date"
 						value={startDate}
-						onChange={(e) => setStartDate(e.target.value)}
+						onChange={(e) => {
+							setStartDate(e.target.value);
+							setLeedsListLoading(true);
+						}}
 					/>
 				</div>
 				<div>
@@ -236,7 +237,10 @@ export default function LeedsPage() {
 					<Input
 						type="date"
 						value={endDate}
-						onChange={(e) => setEndDate(e.target.value)}
+						onChange={(e) => {
+							setEndDate(e.target.value);
+							setLeedsListLoading(true);
+						}}
 					/>
 				</div>
 				<div>
@@ -251,6 +255,7 @@ export default function LeedsPage() {
 							start.setDate(today.getDate() - days);
 							setStartDate(start.toISOString().split("T")[0]);
 							setEndDate(today.toISOString().split("T")[0]);
+							setLeedsListLoading(true);
 						}}
 					>
 						<SelectTrigger>
@@ -275,7 +280,10 @@ export default function LeedsPage() {
 				</div>
 				<div>
 					<Label>Sort Order</Label>
-					<Select value={sortOrder} onValueChange={setSortOrder}>
+					<Select value={sortOrder} onValueChange={(e)=>{
+						setSortOrder(e);
+						setLeedsListLoading(true);
+					}}>
 						<SelectTrigger>
 							<SelectValue placeholder="Sort Order" />
 						</SelectTrigger>
@@ -295,7 +303,10 @@ export default function LeedsPage() {
 					<Input
 						type="text"
 						value={query}
-						onChange={(e) => setQuery(e.target.value)}
+						onChange={(e) => {
+							setQuery(e.target.value)
+							setLeedsListLoading(true);
+						}}
 					/>
 				</div>
 				<div className="flex items-end">
@@ -304,7 +315,11 @@ export default function LeedsPage() {
 			</div>
 
 			<div className="flex justify-between items-center mb-4">
-				<BadgeSelector badgeList={badgeList} setBadgeList={setBadgeList} setLeedsListLoading={setLeedsListLoading} />
+				<BadgeSelector
+					badgeList={badgeList}
+					setBadgeList={setBadgeList}
+					setLeedsListLoading={setLeedsListLoading}
+				/>
 				<div className="flex items-center gap-2">
 					<Button
 						variant="outline"
@@ -315,7 +330,7 @@ export default function LeedsPage() {
 					>
 						Bulk Update
 					</Button>
-					<Button		
+					<Button
 						variant="outline"
 						onClick={downloadCsvOfSelectedLeeds}
 						disabled={!leedsSelectionList.some((selected) => selected)}
@@ -382,7 +397,10 @@ export default function LeedsPage() {
 						</TableRow>
 					) : (
 						leedsList.map((item: any, index: number) => (
-							<TableRow key={item._id} className={leedsSelectionList[index] ? "bg-blue-100" : ""}>
+							<TableRow
+								key={item._id}
+								className={leedsSelectionList[index] ? "bg-blue-100" : ""}
+							>
 								<TableCell>
 									{/* <Switch
 										checked={leedsSelectionList[index]}
@@ -394,7 +412,7 @@ export default function LeedsPage() {
 									/> */}
 									<Checkbox
 										checked={leedsSelectionList[index]}
-										onCheckedChange={(checked : boolean) => {
+										onCheckedChange={(checked: boolean) => {
 											const newSelection = [...leedsSelectionList];
 											newSelection[index] = checked;
 											setLeedsSelectionList(newSelection);
@@ -620,8 +638,7 @@ function PopUPModal({
 function BadgeSelector({
 	badgeList,
 	setBadgeList,
-	setLeedsListLoading
-	
+	setLeedsListLoading,
 }: {
 	badgeList: string[];
 	setBadgeList: (badges: string[]) => void;
@@ -664,8 +681,7 @@ function BulkUpdateModal({
 	setIsOpen,
 	isOpen,
 	setLeedsListLoading,
-}
-: {
+}: {
 	leedsList: any[];
 	leedSelectionList: boolean[];
 	setLeedsSelectionList: (list: boolean[]) => void;
@@ -710,10 +726,7 @@ function BulkUpdateModal({
 		}
 	};
 	return (
-		<Dialog
-			open={isOpen}
-			onOpenChange={setIsOpen}
-		>
+		<Dialog open={isOpen} onOpenChange={setIsOpen}>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
 					<DialogTitle>Update Badges for selected leeds</DialogTitle>
@@ -734,9 +747,7 @@ function BulkUpdateModal({
 									color: isActive ? "#fff" : undefined,
 									borderColor: badge.color,
 								}}
-								onClick={
-									() => handleBadgeChange(badge.key)
-								}
+								onClick={() => handleBadgeChange(badge.key)}
 							>
 								{badge.label}
 							</Button>
@@ -748,10 +759,13 @@ function BulkUpdateModal({
 					<Button onClick={handleSubmit} disabled={loading}>
 						{loading ? "Updating..." : "Update Badges"}
 					</Button>
-					<Button variant="outline" onClick={()=>{
-						setIsOpen(false);
-						setLeedsSelectionList(new Array(leedsList.length).fill(false));
-					}}>
+					<Button
+						variant="outline"
+						onClick={() => {
+							setIsOpen(false);
+							setLeedsSelectionList(new Array(leedsList.length).fill(false));
+						}}
+					>
 						Close
 					</Button>
 				</DialogFooter>
