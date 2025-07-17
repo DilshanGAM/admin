@@ -1,6 +1,7 @@
 import connectMongo from "@/lib/connectDB";
 import Leed from "@/models/leedsModal";
 import { NextRequest, NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
 	//create leed

@@ -94,7 +94,9 @@ export default function LeedsPage() {
 	const [selectedLeed, setSelectedLeed] = useState(null);
 	const [badgeList, setBadgeList] = useState<string[]>([]);
 	const [leedsSelectionList, setLeedsSelectionList] = useState<boolean[]>([]);
+	const [leedsSelectionAll, setLeedsSelectionAll] = useState(false);
 
+	const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
 	const fetchLeeds = async () => {
 		try {
 			
@@ -169,6 +171,14 @@ export default function LeedsPage() {
 
 	return (
 		<div className="w-full p-6 relative">
+			<BulkUpdateModal
+				leedsList={leedsList}
+				leedSelectionList={leedsSelectionList}
+				setLeedsSelectionList={setLeedsSelectionList}
+				setIsOpen={setIsBulkUpdateModalOpen}
+				isOpen={isBulkUpdateModalOpen}
+				setLeedsListLoading={setLeedsListLoading}
+			/>
 			<DownloadIcon
 				className="absolute top-4 right-4"
 				onClick={() => {
@@ -298,10 +308,19 @@ export default function LeedsPage() {
 				<div className="flex items-center gap-2">
 					<Button
 						variant="outline"
+						onClick={() => {
+							setIsBulkUpdateModalOpen(true);
+						}}
+						disabled={!leedsSelectionList.some((selected) => selected)}
+					>
+						Bulk Update
+					</Button>
+					<Button		
+						variant="outline"
 						onClick={downloadCsvOfSelectedLeeds}
 						disabled={!leedsSelectionList.some((selected) => selected)}
 					>
-						Download Selected Leeds
+						Download Leeds
 					</Button>
 					{/* copy phone selected phone numbers using , as a seperator */}
 					<Button
@@ -316,7 +335,7 @@ export default function LeedsPage() {
 						}}
 						disabled={!leedsSelectionList.some((selected) => selected)}
 					>
-						Copy Selected Numbers
+						Copy Numbers
 					</Button>
 				</div>
 			</div>
@@ -635,5 +654,108 @@ function BadgeSelector({
 				</Button>
 			))}
 		</div>
+	);
+}
+
+function BulkUpdateModal({
+	leedsList,
+	leedSelectionList,
+	setLeedsSelectionList,
+	setIsOpen,
+	isOpen,
+	setLeedsListLoading,
+}
+: {
+	leedsList: any[];
+	leedSelectionList: boolean[];
+	setLeedsSelectionList: (list: boolean[]) => void;
+	setIsOpen: (open: boolean) => void;
+	isOpen: boolean;
+	setLeedsListLoading: (loading: boolean) => void;
+}) {
+	const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
+	const [loading, setLoading] = useState(false);
+	const handleBadgeChange = (badge: string) => {
+		setSelectedBadges((prev) =>
+			prev.includes(badge) ? prev.filter((b) => b !== badge) : [...prev, badge]
+		);
+	};
+	const handleSubmit = async () => {
+		setLoading(true);
+		try {
+			const token = localStorage.getItem("token");
+			const selectedLeeds = leedsList.filter(
+				(_, index) => leedSelectionList[index]
+			);
+			await axios.put(
+				`/api/leeds/bulkBadgeUpdate`,
+				{
+					ids: selectedLeeds.map((l) => l._id),
+					badges: selectedBadges,
+				},
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				}
+			);
+			toast.success("Badges updated successfully!");
+			setLeedsListLoading(true);
+			setIsOpen(false);
+		} catch (error) {
+			console.error("Error updating badges:", error);
+			toast.error("Failed to update badges.");
+		} finally {
+			setLoading(false);
+		}
+	};
+	return (
+		<Dialog
+			open={isOpen}
+			onOpenChange={setIsOpen}
+		>
+			<DialogContent className="max-w-md">
+				<DialogHeader>
+					<DialogTitle>Update Badges for selected leeds</DialogTitle>
+					<DialogDescription>
+						Select or deselect badges for these users.
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="flex flex-wrap gap-2 mt-4">
+					{badgeOptions.map((badge) => {
+						const isActive = selectedBadges.includes(badge.key);
+						return (
+							<Button
+								key={badge.key}
+								variant={isActive ? "default" : "outline"}
+								style={{
+									backgroundColor: isActive ? badge.color : undefined,
+									color: isActive ? "#fff" : undefined,
+									borderColor: badge.color,
+								}}
+								onClick={
+									() => handleBadgeChange(badge.key)
+								}
+							>
+								{badge.label}
+							</Button>
+						);
+					})}
+				</div>
+
+				<DialogFooter className="mt-6">
+					<Button onClick={handleSubmit} disabled={loading}>
+						{loading ? "Updating..." : "Update Badges"}
+					</Button>
+					<Button variant="outline" onClick={()=>{
+						setIsOpen(false);
+						setLeedsSelectionList(new Array(leedsList.length).fill(false));
+					}}>
+						Close
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }
