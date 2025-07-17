@@ -78,7 +78,7 @@ const badgeOptions = [
 
 export default function LeedsPage() {
 	const [leedsList, setLeedsList] = useState([]);
-	const [leedsListLoading, setLeedsListLoading] = useState(false);
+	const [leedsListLoading, setLeedsListLoading] = useState(true);
 	const [pageCount, setPageCount] = useState(1);
 	const [leedsCount, setLeedsCount] = useState(0);
 	const [query, setQuery] = useState("");
@@ -97,7 +97,7 @@ export default function LeedsPage() {
 
 	const fetchLeeds = async () => {
 		try {
-			setLeedsListLoading(true);
+			
 			const token = localStorage.getItem("token");
 			const res = await axios.get(`/api/leeds`, {
 				params: {
