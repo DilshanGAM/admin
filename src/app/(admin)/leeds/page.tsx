@@ -462,14 +462,20 @@ export default function LeedsPage() {
 				<div className="space-x-2">
 					<Button
 						variant="outline"
-						onClick={() => setPage((p) => Math.max(p - 1, 1))}
+						onClick={() =>{
+							setPage((p) => Math.max(p - 1, 1));
+							setLeedsListLoading(true);
+						} }
 						disabled={page === 1}
 					>
 						Previous
 					</Button>
 					<Button
 						variant="outline"
-						onClick={() => setPage((p) => Math.min(p + 1, pageCount))}
+						onClick={() => {
+							setPage((p) => Math.min(p + 1, pageCount));
+							setLeedsListLoading(true);
+						}}
 						disabled={page >= pageCount}
 					>
 						Next
