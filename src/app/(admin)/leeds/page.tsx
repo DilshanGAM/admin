@@ -280,10 +280,13 @@ export default function LeedsPage() {
 				</div>
 				<div>
 					<Label>Sort Order</Label>
-					<Select value={sortOrder} onValueChange={(e)=>{
-						setSortOrder(e);
-						setLeedsListLoading(true);
-					}}>
+					<Select
+						value={sortOrder}
+						onValueChange={(e) => {
+							setSortOrder(e);
+							setLeedsListLoading(true);
+						}}
+					>
 						<SelectTrigger>
 							<SelectValue placeholder="Sort Order" />
 						</SelectTrigger>
@@ -304,7 +307,7 @@ export default function LeedsPage() {
 						type="text"
 						value={query}
 						onChange={(e) => {
-							setQuery(e.target.value)
+							setQuery(e.target.value);
 							setLeedsListLoading(true);
 						}}
 					/>
@@ -459,17 +462,69 @@ export default function LeedsPage() {
 				<p>
 					Showing page <strong>{page}</strong> of <strong>{pageCount}</strong>
 				</p>
-				<div className="space-x-2">
+				<div className="flex items-center space-x-2">
 					<Button
 						variant="outline"
-						onClick={() =>{
+						onClick={() => {
 							setPage((p) => Math.max(p - 1, 1));
 							setLeedsListLoading(true);
-						} }
+						}}
 						disabled={page === 1}
 					>
 						Previous
 					</Button>
+
+					{/* First page */}
+					<Button
+						variant={page === 1 ? "default" : "outline"}
+						onClick={() => {
+							setPage(1);
+							setLeedsListLoading(true);
+						}}
+					>
+						1
+					</Button>
+
+					{/* Left Ellipsis */}
+					{page > 6 && <span className="px-2">...</span>}
+
+					{/* Middle Pages */}
+					{Array.from({ length: 10 }, (_, i) => {
+						const start = Math.max(2, Math.min(page - 4, pageCount - 9));
+						const current = start + i;
+						if (current >= pageCount) return null;
+						return (
+							<Button
+								key={current}
+								variant={page === current ? "default" : "outline"}
+								onClick={() => {
+									setPage(current);
+									setLeedsListLoading(true);
+								}}
+							>
+								{current}
+							</Button>
+						);
+					})}
+
+					{/* Right Ellipsis */}
+					{page < pageCount - 5 && pageCount > 11 && (
+						<span className="px-2">...</span>
+					)}
+
+					{/* Last Page (if not already shown) */}
+					{pageCount > 1 && (
+						<Button
+							variant={page === pageCount ? "default" : "outline"}
+							onClick={() => {
+								setPage(pageCount);
+								setLeedsListLoading(true);
+							}}
+						>
+							{pageCount}
+						</Button>
+					)}
+
 					<Button
 						variant="outline"
 						onClick={() => {
